@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+/* —— Diary theme: iron-gall ink on antique white ——
+   Contrast against --page: ink ~15:1, ink-soft ~7.5:1, seal ~7.2:1 (all
+   clear WCAG AA's 4.5:1 for body text). */
+:root {
+  --page: #faebd7;
+  --page-edge: #ecd6b6;
+  --ink: #2a1b12;
+  --ink-soft: #5e4632;
+  --seal: #8b2e1f;
+  --rule: rgba(42, 27, 18, 0.14);
+}
+
+@theme inline {
+  --font-hand: var(--font-hand);
+  --font-serif: var(--font-serif);
+  --color-page: var(--page);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-seal: var(--seal);
+  --color-rule: var(--rule);
+}
+
+/* Lenis smooth-scroll (root mode), same as wyrd. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Paper: a faint fibre grain (SVG noise) over antique white, darkening
+   toward the edges like an old page. Fixed so the grain doesn't slide past
+   the text while scrolling. */
+.paper {
+  background-color: var(--page);
+  background-image:
+    radial-gradient(ellipse at center, transparent 55%, rgba(120, 82, 40, 0.16) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.35  0 0 0 0 0.24  0 0 0 0 0.12  0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-attachment: fixed;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-serif), Georgia, serif;
+  overflow-x: clip;
+}
+
+::selection {
+  background: rgba(139, 46, 31, 0.2);
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--seal);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Links read like underlined ink, not web-blue. */
+.ink-link {
+  color: var(--seal);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  transition: text-decoration-thickness 0.15s ease;
+}
+.ink-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Handwritten text gets rough, bled edges (filter in InkBleedFilter.tsx). */
+.font-hand {
+  filter: url(#ink-bleed);
+}
+
+/* —— Ink (see components/ink.tsx) ——
+   Only when JS is running (.js, set before paint) do letters start hidden;
+   without JS the diary simply reads as printed.
+
+   --p (0 → 1, set by InkController) is how far the pen has got; it defaults
+   to 0, so the first paint shows blank pages rather than a flash of text.
+   --a is each letter's own ink, 0 → 1 across a trailing edge of --tail
+   letters, so the pen's edge is a soft gradient rather than a hard cut, and
+   letters still drying carry a faint halo. No transitions: letters follow
+   --p directly, so scrolling up un-writes them in reverse. */
+.js [data-ink] .ch {
+  --tail: 8;
+  --a: clamp(0, calc((var(--p, 0) * (var(--n) + var(--tail)) - var(--i)) / var(--tail)), 1);
+  opacity: var(--a);
+  text-shadow: 0 0 calc((1 - var(--a)) * 10px) rgba(42, 27, 18, calc((1 - var(--a)) * 0.5));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js [data-ink] .ch {
+    opacity: 1 !important;
+    text-shadow: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
