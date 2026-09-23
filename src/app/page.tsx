@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import DiaryEntry from "@/components/DiaryEntry";
+import Footer from "@/components/Footer";
 import { entries } from "@/content/diary";
 
 export default function Home() {
@@ -13,6 +14,7 @@ export default function Home() {
           <DiaryEntry key={entry.id} entry={entry} />
         ))}
       </main>
+      <Footer />
     </>
   );
 }

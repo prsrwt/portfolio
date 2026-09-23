@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Entry, Project } from "@/content/diary";
+import type { Entry, Job, Project, StackGroup } from "@/content/diary";
 import { profile } from "@/content/diary";
 import { GitHubIcon, LinkedInIcon, MailIcon } from "./Icons";
 import { inkWriter } from "./ink";
@@ -41,7 +41,7 @@ function ProjectItem({ project }: { project: Project }) {
         href={project.href}
         target="_blank"
         rel="noreferrer"
-        className="ink-link font-hand text-2xl font-semibold"
+        className="ink-link font-name text-2xl font-semibold"
       >
         {name}
       </a>
@@ -51,7 +51,7 @@ function ProjectItem({ project }: { project: Project }) {
   );
 }
 
-function StackGroups({ groups }: { groups: Extract<Entry, { kind: "stack" }>["groups"] }) {
+function StackGroups({ groups }: { groups: StackGroup[] }) {
   const ink = inkWriter();
   const rows = groups.map((group) => ({
     label: group.label,
@@ -59,7 +59,7 @@ function StackGroups({ groups }: { groups: Extract<Entry, { kind: "stack" }>["gr
     dd: ink.text(group.items.join(", ")),
   }));
   return (
-    <dl {...ink.blockProps()} className="space-y-3">
+    <dl {...ink.blockProps()} className="mt-10 space-y-3">
       {rows.map((row) => (
         <div key={row.label} className="sm:flex sm:gap-3">
           <dt className="font-semibold">{row.dt}</dt>
@@ -70,19 +70,28 @@ function StackGroups({ groups }: { groups: Extract<Entry, { kind: "stack" }>["gr
   );
 }
 
-function Exploring({ items }: { items: string[] }) {
+function JobItem({ job }: { job: Job }) {
   const ink = inkWriter();
-  const heading = ink.text("Currently exploring");
-  const rows = items.map((item) => ({ key: item, node: ink.text(item) }));
+  const company = ink.text(job.company);
+  // Role, dates and place read as one pencilled line under the company.
+  const meta = ink.text([job.role, job.duration, job.location].filter(Boolean).join(" · "));
+  const summary = (job.summary ?? []).map((text) => ({ key: text, node: ink.text(text) }));
+  const notes = job.notes.map((text) => ({ key: text, node: ink.text(text) }));
   return (
-    <div {...ink.blockProps()} className="mt-10">
-      <h3 className="font-hand text-2xl font-semibold text-ink-soft">{heading}</h3>
-      <ul className="mt-4 list-disc space-y-2 pl-6 marker:text-ink-soft">
-        {rows.map((row) => (
-          <li key={row.key}>{row.node}</li>
+    <li {...ink.blockProps()} className="border-t border-rule pt-5">
+      <h3 className="font-name text-2xl font-semibold">{company}</h3>
+      <p className="mt-1 text-base italic text-ink-soft">{meta}</p>
+      {summary.map((para) => (
+        <p key={para.key} className="mt-3">
+          {para.node}
+        </p>
+      ))}
+      <ul className="mt-3 list-disc space-y-2 pl-6 marker:text-ink-soft">
+        {notes.map((note) => (
+          <li key={note.key}>{note.node}</li>
         ))}
       </ul>
-    </div>
+    </li>
   );
 }
 
@@ -123,8 +132,22 @@ function ContactLinks() {
 
 function EntryBody({ entry }: { entry: Entry }) {
   switch (entry.kind) {
-    case "prose":
-      return <Paragraphs items={entry.paragraphs} />;
+    case "about":
+      return (
+        <>
+          <Paragraphs items={entry.paragraphs} />
+          <StackGroups groups={entry.groups} />
+        </>
+      );
+
+    case "experience":
+      return (
+        <ul className="space-y-8">
+          {entry.jobs.map((job) => (
+            <JobItem key={job.company} job={job} />
+          ))}
+        </ul>
+      );
 
     case "projects":
       return (
@@ -135,15 +158,6 @@ function EntryBody({ entry }: { entry: Entry }) {
               <ProjectItem key={project.name} project={project} />
             ))}
           </ul>
-        </>
-      );
-
-    case "stack":
-      return (
-        <>
-          <StackGroups groups={entry.groups} />
-          <Exploring items={entry.exploring} />
-          <InkParagraph text={entry.sharpening} className="mt-8" />
         </>
       );
 
@@ -175,8 +189,8 @@ export default function DiaryEntry({ entry }: { entry: Entry }) {
       className="mx-auto max-w-2xl scroll-mt-24 px-4 py-24 sm:px-6"
     >
       <div {...ink.blockProps()}>
-        <p className="font-hand text-2xl text-ink-soft">{chapter}</p>
-        <h2 id={`${entry.id}-heading`} className="mt-1 font-hand text-4xl font-semibold leading-snug sm:text-5xl">
+        <p className="font-hand text-3xl text-ink-soft">{chapter}</p>
+        <h2 id={`${entry.id}-heading`} className="mt-1 font-hand text-5xl leading-snug sm:text-6xl">
           {heading}
         </h2>
       </div>

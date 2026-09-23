@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* —— Diary theme: iron-gall ink on antique white ——
+/* Diary theme: iron-gall ink on antique white.
    Contrast against --page: ink ~15:1, ink-soft ~7.5:1, seal ~7.2:1 (all
    clear WCAG AA's 4.5:1 for body text). */
 :root {
@@ -14,6 +14,7 @@
 
 @theme inline {
   --font-hand: var(--font-hand);
+  --font-name: var(--font-name);
   --font-serif: var(--font-serif);
   --color-page: var(--page);
   --color-ink: var(--ink);
@@ -78,12 +79,34 @@ button:focus-visible {
   text-decoration-thickness: 2px;
 }
 
-/* Handwritten text gets rough, bled edges (filter in InkBleedFilter.tsx). */
-.font-hand {
+/* Both hands get rough, bled edges (filter in InkBleedFilter.tsx), but only
+   once their block has finished writing. The filter chain is expensive, and
+   applying it to letters whose opacity changes every scroll frame would
+   re-rasterise the whole heading on each one. Waiting also reads better: the
+   ink blooms as it dries. Blocks are marked done by InkController; without
+   JavaScript nothing is ever unwritten, so everything is filtered. */
+.font-hand,
+.font-name {
   filter: url(#ink-bleed);
 }
+.js [data-ink]:not([data-ink-done]) .font-hand,
+.js [data-ink]:not([data-ink-done]) .font-name {
+  filter: none;
+}
 
-/* —— Ink (see components/ink.tsx) ——
+/* Each inked sentence is in the page twice: once flat for screen readers,
+   once split into letters. Only the letters should be selectable, or copying
+   a paragraph pastes it out twice. Screen readers ignore user-select. */
+[data-ink] .sr-only {
+  user-select: none;
+}
+
+/* Every letter sits slightly soaked into the page, JS or not. */
+[data-ink] .ch {
+  text-shadow: 0 0 0.4px rgba(42, 27, 18, 0.3);
+}
+
+/* Ink (see components/ink.tsx).
    Only when JS is running (.js, set before paint) do letters start hidden;
    without JS the diary simply reads as printed.
 
@@ -96,14 +119,23 @@ button:focus-visible {
 .js [data-ink] .ch {
   --tail: 8;
   --a: clamp(0, calc((var(--p, 0) * (var(--n) + var(--tail)) - var(--i)) / var(--tail)), 1);
+  /* --wet: 1 while the pen is on the letter, 0 once it has dried. */
+  --wet: calc(1 - var(--a));
   opacity: var(--a);
-  text-shadow: 0 0 calc((1 - var(--a)) * 10px) rgba(42, 27, 18, calc((1 - var(--a)) * 0.5));
+  /* Two shadows: a tight soak that never fully leaves, so dried letters still
+     sit in the paper rather than on it, and a wide bloom that only the wet
+     letters carry, so the pen's edge looks like it is still bleeding out. */
+  text-shadow:
+    0 0 calc(0.4px + var(--wet) * 2.5px) rgba(42, 27, 18, calc(0.3 + var(--wet) * 0.4)),
+    0 0 calc(var(--wet) * 12px) rgba(42, 27, 18, calc(var(--wet) * 0.45));
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Everything written, and no wet bloom to animate, but keep the static
+     soak so reduced motion still reads as ink on paper. */
   .js [data-ink] .ch {
     opacity: 1 !important;
-    text-shadow: none !important;
+    text-shadow: 0 0 0.4px rgba(42, 27, 18, 0.3) !important;
   }
 }
 

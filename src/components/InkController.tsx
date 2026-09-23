@@ -37,6 +37,9 @@ export default function InkController() {
       if (last.get(block) !== p) {
         last.set(block, p);
         block.style.setProperty("--p", String(p));
+        // Marks the block finished so globals.css can switch the ink-bleed
+        // filter on; see the note there for why it waits.
+        block.toggleAttribute("data-ink-done", p >= 1);
       }
     };
 

@@ -1,15 +1,18 @@
 import { profile } from "@/content/diary";
 import InkPortrait from "./InkPortrait";
-import { MailIcon } from "./Icons";
 import { inkWriter } from "./ink";
 
 export default function Hero() {
   const ink = inkWriter();
   const greeting = (
-    <h1 className="font-hand text-5xl font-semibold leading-tight text-ink sm:text-6xl md:text-7xl">
-      {ink.text("hi, ")}
-      <span className="text-seal">{ink.text(profile.firstName)}</span>
-      {ink.text(" here.")}
+    <h1 className="font-hand text-6xl leading-tight text-ink sm:text-7xl md:text-8xl">
+      {ink.text(profile.greeting.lead)}
+      {/* Kept together so the line never breaks between "I'm" and the name. */}
+      <span className="whitespace-nowrap">
+        {ink.text(profile.greeting.before)}
+        <span className="text-seal">{ink.text(profile.firstName)}</span>
+        {ink.text(profile.greeting.after)}
+      </span>
     </h1>
   );
   const tagline = (
@@ -17,7 +20,6 @@ export default function Hero() {
       {ink.text(profile.tagline)}
     </p>
   );
-  const sayHiStyle = ink.after();
 
   return (
     <section
@@ -31,14 +33,6 @@ export default function Hero() {
       <div {...ink.blockProps({ intro: true })}>
         {greeting}
         {tagline}
-        <a
-          href={`mailto:${profile.email}`}
-          style={sayHiStyle}
-          className="ch mt-8 inline-flex items-center gap-2 rounded-md border border-seal px-5 py-2.5 text-lg font-medium text-seal transition-colors hover:bg-seal hover:text-page"
-        >
-          <MailIcon className="h-5 w-5" />
-          Say hi
-        </a>
       </div>
     </section>
   );
